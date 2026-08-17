@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Porsche Sales Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --red: #d5001c;
+      --gold: #c8a45d;
+      --ink: #f4f4f6;
+      --muted: #9a9aa3;
+      --line: rgba(255, 255, 255, 0.12);
+      --panel: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 8% -10%, rgba(213, 0, 28, 0.28), transparent 28rem),
+        linear-gradient(160deg, #050506 0%, #121214 46%, #070708 100%);
+    }
+    .wrap { width: min(1440px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 280px;
+      padding: 36px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background:
+        linear-gradient(105deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.42) 52%, rgba(0, 0, 0, 0.18) 100%),
+        url("https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=80") center/cover;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 30%;
+      bottom: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), transparent);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: #d7d7dc;
+    }
+    .crest {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      font-weight: 800;
+      color: #111;
+      background: linear-gradient(145deg, #f3d48a, #b88938 48%, #1a1a1c 49%);
+    }
+    h1 {
+      max-width: 18ch;
+      margin: 0 0 14px;
+      font-size: clamp(2.2rem, 5vw, 4.4rem);
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+      font-weight: 700;
+    }
+    .lede { max-width: 58ch; margin: 0; color: #d5d5da; line-height: 1.55; }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;
+      gap: 12px;
+      margin: 22px 0 20px;
+    }
+    .field, .card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+    }
+    .field { padding: 12px 14px; }
+    .card { padding: 20px; }
+    label, .kpi span, th, .tag {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    select {
+      width: 100%;
+      margin-top: 7px;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      font-size: 15px;
+    }
+    option { background: #161618; }
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 0 22px;
+      color: #fff;
+      background: var(--red);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 14px 30px rgba(213, 0, 28, 0.28);
+    }
+    .kpis, .charts, .lower { display: grid; gap: 16px; }
+    .kpis { grid-template-columns: repeat(4, 1fr); }
+    .kpi strong { display: block; margin: 10px 0 6px; font-size: 1.85rem; letter-spacing: -0.03em; }
+    .kpi small { color: var(--muted); }
+    .charts { grid-template-columns: 1.1fr 0.9fr; }
+    .lower { grid-template-columns: 0.9fr 1.1fr; margin-top: 16px; }
+    .head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    h2 { margin: 6px 0 0; font-size: 1.35rem; }
+    .tag { color: var(--red); font-weight: 800; }
+    .hint { max-width: 34ch; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .chart { height: 320px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; font-size: 14px; }
+    tbody tr:hover td { background: rgba(255, 255, 255, 0.04); }
+    .pill {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .insights { display: grid; gap: 10px; }
+    .insight {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 0 6px rgba(213, 0, 28, 0.16);
+    }
+    .note { margin: 18px 4px 0; color: var(--muted); font-size: 12px; }
+    .table-wrap { overflow: auto; }
+    @media (max-width: 1000px) {
+      .filters, .kpis, .charts, .lower { grid-template-columns: 1fr 1fr; }
+      button { grid-column: span 2; min-height: 52px; }
+    }
+    @media (max-width: 700px) {
+      .wrap { width: min(1440px, calc(100% - 20px)); }
+      .hero { padding: 22px; }
+      .filters, .kpis, .charts, .lower { grid-template-columns: 1fr; }
+      button { grid-column: auto; min-height: 48px; }
+      .head { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="brand"><span class="crest">P</span> Porsche Sales Intelligence</div>
+      <h1>Performance comercial com precisão esportiva.</h1>
+      <p class="lede">Dashboard executivo para responder quais modelos lideram por cidade, qual ano de modelo mais saiu e quais oportunidades aparecem no mix local de vendas.</p>
+    </section>
+
+    <section class="filters" aria-label="Filtros">
+      <div class="field">
+        <label for="modelFilter">Modelo da Porsche</label>
+        <select id="modelFilter"></select>
+      </div>
+      <div class="field">
+        <label for="yearFilter">Model Year</label>
+        <select id="yearFilter"></select>
+      </div>
+      <div class="field">
+        <label for="cityFilter">City</label>
+        <select id="cityFilter"></select>
+      </div>
+      <div class="field">
+        <label for="payFilter">Pay method</label>
+        <select id="payFilter"></select>
+      </div>
+      <button type="button" id="clearFilters">Limpar filtros</button>
+    </section>
+
+    <section class="kpis">
+      <article class="card kpi">
+        <span>Vendas filtradas</span>
+        <strong id="salesKpi">0</strong>
+        <small id="cityKpi">—</small>
+      </article>
+      <article class="card kpi">
+        <span>Receita total</span>
+        <strong id="revenueKpi">$0</strong>
+        <small id="ticketKpi">—</small>
+      </article>
+      <article class="card kpi">
+        <span>Modelo líder</span>
+        <strong id="modelKpi">—</strong>
+        <small id="modelShareKpi">—</small>
+      </article>
+      <article class="card kpi">
+        <span>Ano dominante</span>
+        <strong id="yearKpi">—</strong>
+        <small id="yearShareKpi">—</small>
+      </article>
+    </section>
+
+    <section class="charts">
+      <article class="card">
+        <div class="head">
+          <div>
+            <span class="tag">Pergunta 1</span>
+            <h2>Principais modelos vendidos por cidade</h2>
+          </div>
+          <p class="hint">Filtre uma cidade para ver o mix local. Sem filtro, aparece a liderança do portfólio.</p>
+        </div>
+        <div class="chart"><canvas id="modelChart"></canvas></div>
+      </article>
+      <article class="card">
+        <div class="head">
+          <div>
+            <span class="tag">Pergunta 2</span>
+            <h2>Ano de modelo com maior saída</h2>
+          </div>
+          <p class="hint">Distribuição de vendas por Model Year no recorte selecionado.</p>
+        </div>
+        <div class="chart"><canvas id="yearChart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="lower">
+      <article class="card">
+        <div class="head">
+          <div>
+            <span class="tag">Pergunta 3</span>
+            <h2>Vendas por State</h2>
+          </div>
+          <p class="hint">Ranking por estado: volume e receita no recorte filtrado.</p>
+        </div>
+        <div class="chart"><canvas id="stateChart"></canvas></div>
+      </article>
+      <article class="card">
+        <div class="head">
+          <div>
+            <span class="tag">Leitura executiva</span>
+            <h2>Recomendações</h2>
+          </div>
+        </div>
+        <div class="insights" id="insights"></div>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="head">
+        <div>
+          <span class="tag">Detalhamento</span>
+          <h2>Últimas vendas no recorte</h2>
+        </div>
+        <p class="hint">Tabela operacional para validar preço, status e método de pagamento.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Modelo</th>
+              <th>Ano</th>
+              <th>Cidade</th>
+              <th>Pagamento</th>
+              <th>Preço</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="salesTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="note">Base pública: recorte sanitizado de porsche_database_sanitized.xlsx. Sem nomes de clientes. Datas inválidas aparecem como “Sem data”.</p>
+  </main>
+
+  <script>
+    const RAW_ROWS = [["", "718 Cayman", 2022, "Boston", "MA", "Credit Card", 79500.0, "Delivered"], ["2024-03-14", "911 Turbo S", 2024, "Seattle", "WA", "Wire Transfer", 235000.0, "Delivered"], ["2024-04-18", "Cayenne Coupe", 2023, "Austin", "TX", "Financing", 112750.0, "In Transit"], ["", "Macan S", 2021, "Denver", "CO", "Cash", 68900.0, "Pending"], ["2024-05-22", "Taycan 4S", 2024, "Los Angeles", "CA", "Bank Transfer", 121000.0, "Delivered"], ["2024-08-06", "Panamera 4", 2023, "Miami", "FL", "Credit Card", 104500.0, "Cancelled"], ["2024-07-11", "911 Carrera S", 2020, "New York", "NY", "Lease", 96300.0, "Delivered"], ["", "Cayenne E-Hybrid", 2022, "San Diego", "CA", "Wire Transfer", 89750.0, "Pending Approval"], ["2024-08-19", "718 Boxster", 2021, "Chicago", "IL", "Debit Card", 73500.0, "Shipped"], ["2024-09-02", "Macan GTS", 2024, "Phoenix", "AZ", "Financing", 95000.0, "In Transit"], ["2024-09-17", "Taycan Turbo", 2023, "Dallas", "TX", "ACH Payment", 153200.5, "Delivered"], ["", "911 GT3", 2024, "Las Vegas", "NV", "Wire Transfer", 241000.0, "Pending"], ["2024-05-11", "Panamera Turbo S", 2022, "San Jose", "CA", "Cash", 132000.0, "Delivered"], ["2024-12-12", "Cayenne Turbo GT", 2024, "Houston", "TX", "Crypto Payment", 188000.0, "Awaiting Delivery"], ["2024-12-25", "911 Carrera Cabriolet", 2023, "Atlanta", "GA", "Credit Card", 127800.0, "Delivered"], ["2025-01-06", "Macan", 2021, "Orlando", "FL", "Bank Transfer", 58900.0, "Pending"], ["", "718 Spyder RS", 2024, "Portland", "OR", "Financing", 164000.0, "In Transit"], ["2025-02-14", "Taycan Cross Turismo", 2023, "Charlotte", "NC", "Wire Transfer", 118500.0, "Delivered"], ["", "Cayenne S", 2022, "Nashville", "TN", "Credit Card", 91300.0, "Pending"], ["2025-03-21", "911 Targa 4S", 2024, "Minneapolis", "MN", "Lease", 158750.0, "Delivered"], ["2025-03-28", "Panamera", 2020, "Philadelphia", "PA", "Bank Transfer", 72000.0, "Cancelled"], ["2025-04-09", "Macan Electric", 2025, "San Antonio", "TX", "Wire Transfer", 86500.0, "Delivered"], ["", "911 Dakar", 2024, "Salt Lake City", "UT", "Cash", 270000.0, "Awaiting Pickup"], ["2025-05-12", "Taycan GTS", 2023, "Raleigh", "NC", "Financing", 139000.0, "In Transit"], ["2025-06-18", "Cayenne", 2021, "Detroit", "MI", "Credit Card", 76800.0, "Delivered"], ["", "718 Cayman GT4 RS", 2024, "Columbus", "OH", "Wire Transfer", 173600.0, "Pending"], ["2025-07-07", "911 Carrera GTS", 2022, "Indianapolis", "IN", "Cash", 119900.0, "Delivered"], ["2025-07-22", "Panamera 4 E-Hybrid", 2023, "Fort Worth", "TX", "Lease", 109250.0, "In Transit"], ["2025-08-14", "Macan T", 2022, "Jacksonville", "FL", "Wire Transfer", 82000.0, "Delivered"], ["2025-09-01", "Taycan Turbo S", 2025, "San Diego", "CA", "Crypto Payment", 214000.0, "Pending Review"], ["", "911 Carrera", 2024, "Tampa", "FL", "Credit Card", 124500.0, "Delivered"], ["2025-09-18", "Cayenne S", 2023, "Sacramento", "CA", "Bank Transfer", 98200.0, "Pending"], ["2025-10-04", "Macan", 2022, "Cleveland", "OH", "Financing", 67500.0, "Delivered"], ["2025-10-12", "Taycan", 2025, "Milwaukee", "WI", "Wire Transfer", 116900.0, "In Transit"], ["2025-10-29", "Panamera 4S", 2024, "Kansas City", "MO", "Cash", 112000.0, "Delivered"], ["2025-02-11", "718 Boxster", 2021, "Omaha", "NE", "Debit Card", 74000.0, "Cancelled"], ["2025-11-16", "911 Turbo", 2024, "Albuquerque", "NM", "Wire Transfer", 198300.0, "Awaiting Delivery"], ["", "Cayenne Coupe", 2023, "Tucson", "AZ", "Wire Transfer", 103750.0, "Pending Approval"], ["", "Macan GTS", 2024, "Fresno", "CA", "Financing", 93600.0, "Shipped"], ["2025-12-07", "Taycan 4S", 2025, "Virginia Beach", "VA", "ACH Payment", 129000.0, "In Transit"], ["2025-12-22", "Panamera Turbo", 2022, "Colorado Springs", "CO", "Credit Card", 136000.0, "Delivered"], ["", "911 GT3 RS", 2024, "Arlington", "TX", "Wire Transfer", 286500.0, "Pending"], ["2026-01-08", "Cayenne E-Hybrid", 2023, "Bakersfield", "CA", "Lease", 92800.0, "Delivered"], ["2026-01-15", "Macan T", 2022, "Mesa", "AZ", "Cash", 72400.0, "Awaiting Pickup"], ["2026-01-28", "Taycan Turbo", 2025, "Atlanta", "GA", "Crypto Payment", 158500.0, "Delivered"], ["2026-02-03", "718 Cayman", 2021, "Long Beach", "CA", "Bank Transfer", 69900.0, "Pending"], ["", "911 Targa 4", 2024, "Oakland", "CA", "Financing", 141250.0, "In Transit"], ["2026-02-19", "Panamera", 2020, "Tulsa", "OK", "Wire Transfer", 71500.0, "Delivered"], ["2026-02-25", "Cayenne Turbo", 2023, "Wichita", "KS", "Credit Card", 146800.0, "Pending"], ["2026-03-01", "Macan Electric", 2025, "New Orleans", "LA", "Lease", 89700.0, "Delivered"], ["2026-03-14", "911 Carrera S", 2022, "Honolulu", "HI", "Bank Transfer", 104600.0, "Cancelled"], ["", "Taycan GTS", 2024, "Anaheim", "CA", "Wire Transfer", 142000.0, "Delivered"], ["2026-04-08", "Cayenne", 2021, "Henderson", "NV", "Cash", 78400.0, "Awaiting Review"], ["", "718 Spyder RS", 2025, "Lexington", "KY", "Financing", 169000.0, "In Transit"], ["2026-04-21", "911 Dakar", 2024, "Riverside", "CA", "Credit Card", 268900.0, "Delivered"], ["2026-04-29", "Panamera 4", 2023, "Corpus Christi", "TX", "Wire Transfer", 101300.0, "Pending"], ["2026-05-05", "Macan S", 2021, "St. Louis", "MO", "Cash", 66750.0, "Delivered"], ["2026-05-14", "Taycan Cross Turismo", 2024, "Pittsburgh", "PA", "Lease", 127900.0, "In Transit"], ["2026-05-23", "Cayenne Turbo GT", 2025, "Cincinnati", "OH", "Wire Transfer", 200000.0, "Delivered"], ["2026-06-02", "911 Carrera Cabriolet", 2023, "Anchorage", "AK", "Crypto Payment", 132000.0, "Pending Review"], ["2026-06-15", "718 Cayman GT4 RS", 2024, "Plano", "TX", "Credit Card", 176400.0, "Delivered"], ["", "Panamera 4 E-Hybrid", 2022, "Newark", "NJ", "Bank Transfer", 108500.0, "Cancelled"], ["2026-07-07", "Macan", 2021, "Greensboro", "NC", "Financing", 59000.0, "Awaiting Delivery"], ["2026-07-20", "Taycan Turbo S", 2025, "Lincoln", "NE", "Wire Transfer", 218000.0, "Pending"], ["", "Cayenne S", 2024, "Jersey City", "NJ", "Debit Card", 99950.0, "Delivered"], ["2026-04-08", "911 Carrera GTS", 2024, "Chandler", "AZ", "Credit Card", 121750.0, "Delivered"], ["2026-08-18", "718 Boxster GTS", 2023, "Reno", "NV", "Lease", 91500.0, "Shipped"], ["2026-08-31", "Panamera Turbo S", 2022, "Buffalo", "NY", "Wire Transfer", 134000.0, "In Transit"], ["2026-09-09", "Macan GTS", 2024, "Durham", "NC", "ACH Payment", 96800.0, "Delivered"], ["2026-09-17", "Taycan 4S", 2025, "Laredo", "TX", "Wire Transfer", 131600.0, "Pending Approval"], ["2026-09-28", "Cayenne E-Hybrid", 2023, "Madison", "WI", "Cash", 94300.0, "Delivered"], ["2026-10-06", "911 Turbo S", 2025, "Lubbock", "TX", "Crypto Payment", 242000.0, "Awaiting Pickup"], ["2026-10-16", "718 Cayman S", 2022, "Toledo", "OH", "Credit Card", 82750.0, "Cancelled"], ["2026-10-29", "Macan Electric", 2026, "Irvine", "CA", "Wire Transfer", 91300.0, "Delivered"], ["2026-11-03", "Panamera", 2021, "Garland", "TX", "Financing", 79900.0, "Pending"], ["", "Cayenne Coupe", 2024, "Irving", "TX", "Bank Transfer", 111000.0, "In Transit"], ["2026-12-11", "911 Targa 4S", 2023, "Chesapeake", "VA", "Cash", 156500.0, "Delivered"], ["2026-12-24", "Taycan", 2025, "Scottsdale", "AZ", "Lease", 119900.0, "Pending"], ["", "Macan T", 2022, "Norfolk", "VA", "Wire Transfer", 73200.0, "Delivered"], ["2026-12-28", "911 GT3", 2024, "Boise", "ID", "Wire Transfer", 224000.0, "Awaiting Delivery"], ["2027-01-15", "911 Carrera", 2024, "Orlando", "FL", "Credit Card", 126900.0, "Delivered"], ["2027-01-29", "Cayenne", 2023, "San Jose", "CA", "Bank Transfer", 84500.0, "Pending"], ["2027-02-11", "Macan S", 2022, "Tampa", "FL", "Financing", 69800.0, "Delivered"], ["", "Taycan 4S", 2025, "Denver", "CO", "Wire Transfer", 132700.0, "In Transit"], ["2027-03-05", "Panamera", 2021, "Austin", "TX", "Cash", 81000.0, "Delivered"], ["2027-03-18", "718 Cayman", 2023, "Seattle", "WA", "Debit Card", 78900.0, "Cancelled"], ["2027-04-02", "911 Turbo S", 2026, "Boston", "MA", "Wire Transfer", 249300.0, "Awaiting Delivery"], ["", "Cayenne Coupe", 2024, "Phoenix", "AZ", "Wire Transfer", 108750.0, "Pending Approval"], ["", "Macan Electric", 2026, "Chicago", "IL", "Financing", 92600.0, "Shipped"], ["2027-05-12", "Taycan Turbo", 2025, "Dallas", "TX", "ACH Payment", 164000.0, "In Transit"], ["2027-05-27", "Panamera 4S", 2024, "San Francisco", "CA", "Credit Card", 119000.0, "Delivered"], ["", "911 GT3", 2026, "Las Vegas", "NV", "Wire Transfer", 232500.0, "Pending"], ["2027-06-18", "Cayenne E-Hybrid", 2023, "Charlotte", "NC", "Lease", 96800.0, "Delivered"], ["2027-07-03", "Macan T", 2022, "Mesa", "AZ", "Cash", 74400.0, "Awaiting Pickup"], ["2027-07-22", "Taycan GTS", 2025, "Atlanta", "GA", "Crypto Payment", 148500.0, "Delivered"], ["2027-08-08", "718 Boxster", 2021, "Long Beach", "CA", "Bank Transfer", 71900.0, "Pending"], ["", "911 Targa 4", 2024, "Oakland", "CA", "Financing", 143250.0, "In Transit"], ["2027-09-19", "Panamera Turbo", 2020, "Tulsa", "OK", "Wire Transfer", 137500.0, "Delivered"], ["2027-09-25", "Cayenne Turbo GT", 2025, "Wichita", "KS", "Credit Card", 204800.0, "Pending"], ["2027-10-01", "911 Dakar", 2024, "New Orleans", "LA", "Lease", 271700.0, "Delivered"]];
+
+    const sales = RAW_ROWS.map((row, index) => ({
+      id: index + 1,
+      date: row[0],
+      model: row[1],
+      year: row[2],
+      city: row[3],
+      state: row[4],
+      pay: row[5],
+      price: Number(row[6]) || 0,
+      status: row[7]
+    }));
+
+    const palette = ["#d5001c", "#f5f5f7", "#c8a45d", "#7e8087", "#4f5157", "#8f1c2b", "#b9b9bf", "#2f3035"];
+    let modelChart;
+    let yearChart;
+    let stateChart;
+
+    const $ = (id) => {
+      const el = document.getElementById(id);
+      if (!el) throw new Error("Elemento não encontrado: #" + id);
+      return el;
+    };
+
+    const money = (value) => new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    }).format(value || 0);
+
+    const escapeHtml = (value) => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+    function countBy(rows, key) {
+      const counts = {};
+      rows.forEach((row) => {
+        const label = row[key] == null || row[key] === "" ? "—" : String(row[key]);
+        counts[label] = (counts[label] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function topEntries(counts, limit) {
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], undefined, { numeric: true }))
+        .slice(0, limit);
+    }
+
+    function uniqueValues(key) {
+      return [...new Set(sales.map((row) => row[key]).filter((value) => value !== "" && value != null))]
+        .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true }));
+    }
+
+    function fillSelect(id, key) {
+      const select = $(id);
+      const options = uniqueValues(key)
+        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+        .join("");
+      select.innerHTML = `<option value="">Todos</option>${options}`;
+    }
+
+    function filteredRows() {
+      const model = $("modelFilter").value;
+      const year = $("yearFilter").value;
+      const city = $("cityFilter").value;
+      const pay = $("payFilter").value;
+      return sales.filter((row) =>
+        (!model || row.model === model) &&
+        (!year || String(row.year) === year) &&
+        (!city || row.city === city) &&
+        (!pay || row.pay === pay)
+      );
+    }
+
+    function stateSeries(rows) {
+      const grouped = {};
+      rows.forEach((row) => {
+        const state = row.state || "—";
+        if (!grouped[state]) grouped[state] = { units: 0, revenue: 0 };
+        grouped[state].units += 1;
+        grouped[state].revenue += row.price;
+      });
+      return Object.entries(grouped)
+        .map(([state, stats]) => ({ state, ...stats }))
+        .sort((a, b) => b.units - a.units || b.revenue - a.revenue)
+        .slice(0, 12);
+    }
+
+    function renderKpis(rows) {
+      const revenue = rows.reduce((sum, row) => sum + row.price, 0);
+      const [topModel, modelCount] = topEntries(countBy(rows, "model"), 1)[0] || ["—", 0];
+      const [topYear, yearCount] = topEntries(countBy(rows, "year"), 1)[0] || ["—", 0];
+      const cities = Object.keys(countBy(rows, "city")).length;
+      const n = Math.max(rows.length, 1);
+      $("salesKpi").textContent = rows.length;
+      $("cityKpi").textContent = `${cities} cidade(s) no recorte`;
+      $("revenueKpi").textContent = money(revenue);
+      $("ticketKpi").textContent = `Ticket médio ${money(revenue / n)}`;
+      $("modelKpi").textContent = topModel;
+      $("modelShareKpi").textContent = `${modelCount} venda(s), ${Math.round((modelCount / n) * 100)}%`;
+      $("yearKpi").textContent = topYear;
+      $("yearShareKpi").textContent = `${yearCount} venda(s), ${Math.round((yearCount / n) * 100)}%`;
+    }
+
+    function renderCharts(rows) {
+      const models = topEntries(countBy(rows, "model"), 8);
+      const years = topEntries(countBy(rows, "year"), 7);
+      const states = stateSeries(rows);
+      const common = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#c8c8ce", boxWidth: 11, usePointStyle: true } },
+          tooltip: { backgroundColor: "#111114" }
+        }
+      };
+
+      if (modelChart) modelChart.destroy();
+      modelChart = new Chart($("modelChart"), {
+        type: "bar",
+        data: {
+          labels: models.map(([label]) => label),
+          datasets: [{
+            data: models.map(([, value]) => value),
+            backgroundColor: models.map((_, i) => palette[i % palette.length]),
+            borderWidth: 0,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          ...common,
+          indexAxis: "y",
+          plugins: { ...common.plugins, legend: { display: false } },
+          scales: {
+            x: { grid: { color: "rgba(255,255,255,.07)" }, ticks: { color: "#aaa", precision: 0 } },
+            y: { grid: { display: false }, ticks: { color: "#f6f6f7" } }
+          }
+        }
+      });
+
+      if (yearChart) yearChart.destroy();
+      yearChart = new Chart($("yearChart"), {
+        type: "doughnut",
+        data: {
+          labels: years.map(([label]) => label),
+          datasets: [{
+            data: years.map(([, value]) => value),
+            backgroundColor: years.map((_, i) => palette[i % palette.length]),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          ...common,
+          plugins: { ...common.plugins, legend: { position: "bottom", labels: common.plugins.legend.labels } }
+        }
+      });
+
+      if (stateChart) stateChart.destroy();
+      stateChart = new Chart($("stateChart"), {
+        type: "bar",
+        data: {
+          labels: states.map((item) => item.state),
+          datasets: [
+            { label: "Vendas", data: states.map((item) => item.units), backgroundColor: "#d5001c", borderWidth: 0, borderRadius: 10, yAxisID: "y" },
+            { label: "Receita", data: states.map((item) => item.revenue), backgroundColor: "#c8a45d", borderWidth: 0, borderRadius: 10, yAxisID: "y1" }
+          ]
+        },
+        options: {
+          ...common,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            ...common.plugins,
+            legend: { position: "bottom", labels: common.plugins.legend.labels },
+            tooltip: {
+              backgroundColor: "#111114",
+              callbacks: {
+                label: (ctx) => ctx.dataset.label === "Receita"
+                  ? `Receita: ${money(ctx.parsed.y)}`
+                  : `Vendas: ${ctx.parsed.y}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: "#f6f6f7" } },
+            y: { beginAtZero: true, ticks: { color: "#aaa", precision: 0 }, grid: { color: "rgba(255,255,255,.08)" } },
+            y1: {
+              beginAtZero: true,
+              position: "right",
+              grid: { drawOnChartArea: false },
+              ticks: { color: "#aaa", callback: (value) => money(value) }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTable(rows) {
+      const latest = [...rows].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 14);
+      $("salesTable").innerHTML = latest.map((row) => `
+        <tr>
+          <td>${escapeHtml(row.date || "Sem data")}</td>
+          <td>${escapeHtml(row.model)}</td>
+          <td>${escapeHtml(row.year)}</td>
+          <td>${escapeHtml(row.city)}, ${escapeHtml(row.state)}</td>
+          <td>${escapeHtml(row.pay)}</td>
+          <td>${money(row.price)}</td>
+          <td><span class="pill">${escapeHtml(row.status)}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderInsights(rows) {
+      const [topModel, modelCount] = topEntries(countBy(rows, "model"), 1)[0] || ["—", 0];
+      const [topCity, cityCount] = topEntries(countBy(rows, "city"), 1)[0] || ["—", 0];
+      const [topPay, payCount] = topEntries(countBy(rows, "pay"), 1)[0] || ["—", 0];
+      const topState = stateSeries(rows)[0];
+      const revenue = rows.reduce((sum, row) => sum + row.price, 0);
+      const avg = revenue / Math.max(rows.length, 1);
+      const items = [
+        ["Modelo com maior tração", `${topModel} lidera com ${modelCount} venda(s). Vale reforçar estoque, test-drive e campanha para variantes próximas.`],
+        ["Cidade com maior concentração", `${topCity} reúne ${cityCount} venda(s). Use o mix vencedor como referência regional.`],
+        ["Preferência de pagamento", `${topPay} aparece em ${payCount} venda(s). Ajuste checkout e ofertas para esse fluxo.`],
+        ["Estado líder", topState
+          ? `${topState.state} concentra ${topState.units} venda(s) e ${money(topState.revenue)}. Ticket médio do recorte: ${money(avg)}.`
+          : "Sem estado no recorte."]
+      ];
+      $("insights").innerHTML = items.map(([title, text]) => `
+        <div class="insight">
+          <span class="dot"></span>
+          <div><strong>${escapeHtml(title)}</strong><div class="hint" style="max-width:none;margin-top:4px">${escapeHtml(text)}</div></div>
+        </div>
+      `).join("");
+    }
+
+    function refresh() {
+      const rows = filteredRows();
+      renderKpis(rows);
+      renderCharts(rows);
+      renderTable(rows);
+      renderInsights(rows);
+    }
+
+    function boot() {
+      if (typeof Chart === "undefined") {
+        console.error("Chart.js não carregou.");
+        return;
+      }
+      Chart.defaults.color = "#f6f6f7";
+      Chart.defaults.font.family = "Inter, Helvetica Neue, Arial, sans-serif";
+      fillSelect("modelFilter", "model");
+      fillSelect("yearFilter", "year");
+      fillSelect("cityFilter", "city");
+      fillSelect("payFilter", "pay");
+      ["modelFilter", "yearFilter", "cityFilter", "payFilter"].forEach((id) => {
+        $(id).addEventListener("change", refresh);
+      });
+      $("clearFilters").addEventListener("click", () => {
+        $("modelFilter").value = "";
+        $("yearFilter").value = "";
+        $("cityFilter").value = "";
+        $("payFilter").value = "";
+        refresh();
+      });
+      refresh();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", boot);
+    } else {
+      boot();
+    }
+  </script>
+</body>
+</html>
