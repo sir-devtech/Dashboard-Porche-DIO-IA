@@ -1,47 +1,31 @@
-# Porsche Sales Intelligence
+# Dashboard Porsche
 
-Dashboard executiva de vendas da Porsche, desenvolvida para o projeto da DIO **Criando uma Dashboard da Porsche com Agentes de IA**.
+Projeto da DIO: **Criando uma Dashboard da Porsche com Agentes de IA**.
 
-A página roda 100% no navegador (HTML, CSS e JavaScript), com filtros, KPIs, gráficos e tabela operacional.
+Montei essa dashboard pra analisar as vendas da Porsche a partir da planilha sanitizada do lab. É uma página simples em HTML, CSS e JavaScript, sem backend.
 
-## Links da entrega
+## Links
 
 - Repositório: https://github.com/sir-devtech/Dashboard-Porche-DIO-IA
-- GitHub Pages: https://sir-devtech.github.io/Dashboard-Porche-DIO-IA/
+- Dashboard no ar: https://sir-devtech.github.io/Dashboard-Porche-DIO-IA/
 
-## O que a dashboard responde
+## O que dá pra ver
 
-- Quais modelos lideram no recorte (e por cidade, quando o filtro de cidade está ativo)
-- Qual ano de modelo mais saiu
-- Ranking de vendas e receita por estado
-- Mix de pagamento e status das últimas vendas
+Com os filtros de modelo, ano, cidade e forma de pagamento, a tela atualiza:
 
-## Filtros e indicadores
+- quantas vendas entram no recorte
+- receita total e ticket médio
+- modelo que mais vendeu
+- ano de modelo com mais saída
+- gráficos de modelo, ano e estado
+- tabela com as últimas vendas (data, modelo, ano, cidade, pagamento, preço e status)
 
-Filtros: modelo, ano de modelo, cidade e método de pagamento.
+## Dados
 
-KPIs: vendas filtradas, receita total (com ticket médio), modelo líder e ano dominante.
+O GitHub Pages fica público, então não subi nome de cliente nem de vendedor. Usei só as colunas já tratadas da planilha do curso. Quando a data vinha inválida, deixei como **Sem data**.
 
-## Dados públicos (cuidado do lab)
+Planilha do lab: [porsche_database_sanitized.xlsx](https://hermes.dio.me/files/assets/8683bed0-cc33-4e06-bca9-04db9c31f9e2.xlsx)
 
-O GitHub Pages é aberto. Por isso este repositório **não publica**:
+## Como rodar
 
-- nomes de clientes (`customer_name`)
-- nomes de vendedores
-- colunas brutas da planilha original
-
-Entra só o recorte sanitizado usado na análise:
-
-`SaleDateSanitized`, `PorscheModelSanitized`, `ModelYearSanitized`, `CitySanitized`, `StateSanitized`, `PayMethodSanitized`, `SalesPriceSanitized`, `DeliveryStatusSanitized`.
-
-Datas inválidas aparecem como **Sem data**.
-
-Fonte: [planilha base Porsche (Sanitizada)](https://hermes.dio.me/files/assets/8683bed0-cc33-4e06-bca9-04db9c31f9e2.xlsx), material complementar da DIO.
-
-## Como abrir localmente
-
-Abra `index.html` no navegador. Os gráficos usam Chart.js via CDN.
-
-## Tecnologias
-
-HTML, CSS, JavaScript e Chart.js. Estrutura e insights montados com apoio de IA (Cursor), a partir da base sanitizada do lab.
+Abre o `index.html` no navegador. Os gráficos vêm do Chart.js.
